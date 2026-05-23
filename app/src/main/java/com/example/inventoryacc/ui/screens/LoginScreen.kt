@@ -45,6 +45,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         )
         Button(
             onClick = {
+                // Пока фиксированная авторизация
                 if (usernameState.value == "admin" && passwordState.value == "12345") {
                     onLoginSuccess()
                 }
