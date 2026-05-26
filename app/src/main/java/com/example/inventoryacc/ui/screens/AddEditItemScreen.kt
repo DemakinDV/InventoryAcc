@@ -15,26 +15,34 @@ import com.example.inventoryacc.domain.model.InventoryItem
 import com.example.inventoryacc.ui.viewmodels.InventoryViewModel
 import com.example.inventoryacc.utils.DateUtils
 import android.widget.Toast
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditItemScreen(
     itemId: String?,
     onNavigateBack: () -> Unit,
-    viewModel: InventoryViewModel = viewModel()
+    viewModel: InventoryViewModel = viewModel(),
+    accountId: String
 ) {
     val context = LocalContext.current
-
-    val existingItem by viewModel.getItemById(itemId ?: "").collectAsState()
+    val existingItemState by viewModel.getItemById(itemId ?: "").collectAsState()
+    val existingItem = existingItemState
 
     val isEditMode = itemId != null && existingItem != null
 
     var name by remember(existingItem) { mutableStateOf(existingItem?.name ?: "") }
+    var quantity by remember(existingItem) { mutableStateOf(existingItem?.quantity?.toString() ?: "") }
     var description by remember(existingItem) { mutableStateOf(existingItem?.description ?: "") }
-    var note by remember(existingItem) { mutableStateOf(existingItem?.note ?: "") }
+    var price by remember(existingItem) { mutableStateOf(existingItem?.price?.toString() ?: "") }
     var purchaseDate by remember(existingItem) {
         mutableStateOf(existingItem?.purchaseDate?.let { DateUtils.formatDate(it) } ?: "")
     }
+    var saleDate by remember(existingItem) {
+        mutableStateOf(existingItem?.saleDate?.let { DateUtils.formatDate(it) } ?: "")
+    }
+    var note by remember(existingItem) { mutableStateOf(existingItem?.note ?: "") }
+    var isInStock by remember(existingItem) { mutableStateOf(existingItem?.isInStock ?: true) }
 
     if (itemId != null && existingItem == null) {
         Box(
@@ -49,7 +57,7 @@ fun AddEditItemScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEditMode) "Редактировать запас" else "Добавить запас") },
+                title = { Text(if (isEditMode) "Редактировать товар" else "Добавить товар") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
@@ -58,35 +66,44 @@ fun AddEditItemScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            if (name.isNotBlank() && description.isNotBlank() && purchaseDate.isNotBlank()) {
-                                val date = DateUtils.parseDate(purchaseDate)
-                                if (date != null) {
-                                    if (isEditMode && existingItem != null) {
-                                        viewModel.updateItem(
-                                            existingItem!!.copy(
-                                                name = name,
-                                                description = description,
-                                                note = note.ifBlank { null },
-                                                purchaseDate = date
-                                            )
-                                        )
-                                        Toast.makeText(context, "Запас обновлен", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        val newItem = InventoryItem(
+                            if (name.isNotBlank()) {
+                                val purchaseDateObj = if (purchaseDate.isNotBlank()) DateUtils.parseDate(purchaseDate) else null
+                                val saleDateObj = if (saleDate.isNotBlank()) DateUtils.parseDate(saleDate) else null
+                                val quantityInt = quantity.toIntOrNull()
+                                val priceDouble = price.toDoubleOrNull()
+
+                                if (isEditMode && existingItem != null) {
+                                    viewModel.updateItem(
+                                        existingItem.copy(
                                             name = name,
-                                            description = description,
+                                            quantity = quantityInt,
+                                            description = description.ifBlank { null },
+                                            price = priceDouble,
+                                            purchaseDate = purchaseDateObj,
+                                            saleDate = saleDateObj,
                                             note = note.ifBlank { null },
-                                            purchaseDate = date
+                                            isInStock = isInStock
                                         )
-                                        viewModel.addItem(newItem)
-                                        Toast.makeText(context, "Запас добавлен", Toast.LENGTH_SHORT).show()
-                                    }
-                                    onNavigateBack()
+                                    )
+                                    Toast.makeText(context, "Товар обновлен", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    Toast.makeText(context, "Неверный формат даты. Используйте ДД.ММ.ГГГГ", Toast.LENGTH_SHORT).show()
+                                    val newItem = InventoryItem(
+                                        name = name,
+                                        quantity = quantityInt,
+                                        description = description.ifBlank { null },
+                                        price = priceDouble,
+                                        purchaseDate = purchaseDateObj,
+                                        saleDate = saleDateObj,
+                                        note = note.ifBlank { null },
+                                        isInStock = isInStock,
+                                        accountId = accountId
+                                    )
+                                    viewModel.addItem(newItem)
+                                    Toast.makeText(context, "Товар добавлен", Toast.LENGTH_SHORT).show()
                                 }
+                                onNavigateBack()
                             } else {
-                                Toast.makeText(context, "Заполните все обязательные поля", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Заполните название товара", Toast.LENGTH_SHORT).show()
                             }
                         }
                     ) {
@@ -112,29 +129,66 @@ fun AddEditItemScreen(
             )
 
             OutlinedTextField(
+                value = quantity,
+                onValueChange = { quantity = it },
+                label = { Text("Количество") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Описание *") },
+                label = { Text("Описание") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2
             )
 
             OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Примечание (необязательно)") },
+                value = price,
+                onValueChange = { price = it },
+                label = { Text("Цена") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 2
+                singleLine = true
             )
 
             OutlinedTextField(
                 value = purchaseDate,
                 onValueChange = { purchaseDate = it },
-                label = { Text("Дата приобретения (ДД.ММ.ГГГГ) *") },
+                label = { Text("Дата покупки (ДД.ММ.ГГГГ)") },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Пример: 15.03.2024") },
                 singleLine = true
             )
+
+            OutlinedTextField(
+                value = saleDate,
+                onValueChange = { saleDate = it },
+                label = { Text("Дата продажи (ДД.ММ.ГГГГ)") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Пример: 20.03.2024") },
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Примечание") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Товар на складе")
+                Switch(
+                    checked = isInStock,
+                    onCheckedChange = { isInStock = it }
+                )
+            }
 
             Text(
                 text = "* - обязательные поля",

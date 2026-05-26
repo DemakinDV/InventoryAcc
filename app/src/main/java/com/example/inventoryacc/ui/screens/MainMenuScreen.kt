@@ -24,10 +24,8 @@ fun MainMenuScreen(onLoginClick: () -> Unit) {
             modifier = Modifier.padding(bottom = 32.dp),
             fontSize = 48.sp
         )
-        Button(
-            onClick = onLoginClick
-        ) {
-            Text("Войти")
+        Button(onClick = onLoginClick) {
+            Text("Начать работу")
         }
     }
 }

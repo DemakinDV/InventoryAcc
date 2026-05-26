@@ -6,13 +6,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ItemDao {
-    @Query("SELECT * FROM inventory_items ORDER BY createdAt DESC")
-    fun getAllItems(): Flow<List<InventoryItem>>
+    @Query("SELECT * FROM inventory_items WHERE accountId = :accountId ORDER BY createdAt DESC")
+    fun getAllItems(accountId: String): Flow<List<InventoryItem>>
 
-    @Query("SELECT * FROM inventory_items WHERE id = :id")
-    suspend fun getItemById(id: String): InventoryItem?
+    @Query("SELECT * FROM inventory_items WHERE id = :id AND accountId = :accountId")
+    suspend fun getItemById(id: String, accountId: String): InventoryItem?
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: InventoryItem)
 
     @Update
@@ -21,6 +21,6 @@ interface ItemDao {
     @Delete
     suspend fun deleteItem(item: InventoryItem)
 
-    @Query("DELETE FROM inventory_items")
-    suspend fun deleteAllItems()
+    @Query("DELETE FROM inventory_items WHERE accountId = :accountId")
+    suspend fun deleteAllItems(accountId: String)
 }
