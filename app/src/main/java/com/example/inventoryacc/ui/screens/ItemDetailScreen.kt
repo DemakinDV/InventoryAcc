@@ -25,7 +25,7 @@ fun ItemDetailScreen(
     onNavigateToEdit: (String) -> Unit,
     viewModel: InventoryViewModel = viewModel()
 ) {
-    val item by viewModel.getItemById(itemId).collectAsState(initial = null)
+    val item by viewModel.getItemById(itemId).collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     
     if (item == null) {
@@ -41,7 +41,7 @@ fun ItemDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Удалить запас") },
+            title = { Text("Удалить товар") },
             text = { Text("Вы уверены, что хотите удалить \"${item?.name}\"?") },
             confirmButton = {
                 TextButton(
@@ -108,38 +108,73 @@ fun ItemDetailScreen(
                     
                     HorizontalDivider()
                     
-                    Text(
-                        text = "Описание",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = item!!.description,
-                        fontSize = 16.sp
-                    )
-                    
-                    if (item!!.note != null) {
+                    item!!.quantity?.let {
+                        Text(
+                            text = "Количество",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(text = it.toString(), fontSize = 16.sp)
                         HorizontalDivider()
+                    }
+                    
+                    item!!.description?.let {
+                        Text(
+                            text = "Описание",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(text = it, fontSize = 16.sp)
+                        HorizontalDivider()
+                    }
+                    
+                    item!!.price?.let {
+                        Text(
+                            text = "Цена",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(text = "$it ₽", fontSize = 16.sp)
+                        HorizontalDivider()
+                    }
+                    
+                    item!!.purchaseDate?.let {
+                        Text(
+                            text = "Дата покупки",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(text = DateUtils.formatDate(it), fontSize = 16.sp)
+                        HorizontalDivider()
+                    }
+                    
+                    item!!.saleDate?.let {
+                        Text(
+                            text = "Дата продажи",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(text = DateUtils.formatDate(it), fontSize = 16.sp)
+                        HorizontalDivider()
+                    }
+                    
+                    item!!.note?.let {
                         Text(
                             text = "Примечание",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        Text(
-                            text = item!!.note!!,
-                            fontSize = 16.sp
-                        )
+                        Text(text = it, fontSize = 16.sp)
+                        HorizontalDivider()
                     }
                     
-                    HorizontalDivider()
-                    
                     Text(
-                        text = "Дата приобретения",
+                        text = "Статус",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = DateUtils.formatDate(item!!.purchaseDate),
+                        text = if (item!!.isInStock) "На складе" else "Продано",
                         fontSize = 16.sp
                     )
                 }

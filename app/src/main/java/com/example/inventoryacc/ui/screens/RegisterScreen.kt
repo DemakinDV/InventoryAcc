@@ -11,15 +11,17 @@ import androidx.compose.ui.unit.dp
 import android.widget.Toast
 import com.example.inventoryacc.ui.viewmodels.AccountViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit,
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     viewModel: AccountViewModel
 ) {
     val context = LocalContext.current
     var login by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     
     Column(
         modifier = Modifier
@@ -29,7 +31,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Авторизация",
+            text = "Регистрация",
             style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.padding(bottom = 32.dp)
         )
@@ -53,27 +55,46 @@ fun LoginScreen(
             singleLine = true
         )
         
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Подтвердите пароль") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true
+        )
+        
         Spacer(modifier = Modifier.height(16.dp))
         
         Button(
             onClick = {
-                viewModel.login(login, password) { success ->
-                    if (success) {
-                        onLoginSuccess()
-                    } else {
-                        Toast.makeText(context, "Неверный логин или пароль", Toast.LENGTH_SHORT).show()
+                when {
+                    login.isBlank() -> Toast.makeText(context, "Введите логин", Toast.LENGTH_SHORT).show()
+                    password.isBlank() -> Toast.makeText(context, "Введите пароль", Toast.LENGTH_SHORT).show()
+                    password != confirmPassword -> Toast.makeText(context, "Пароли не совпадают", Toast.LENGTH_SHORT).show()
+                    else -> {
+                        viewModel.register(login, password) { success ->
+                            if (success) {
+                                Toast.makeText(context, "Регистрация успешна", Toast.LENGTH_SHORT).show()
+                                onRegisterSuccess()
+                            } else {
+                                Toast.makeText(context, "Пользователь уже существует", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Войти")
+            Text("Зарегистрироваться")
         }
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        TextButton(onClick = onNavigateToRegister) {
-            Text("Нет аккаунта? Зарегистрироваться")
+        TextButton(onClick = onNavigateToLogin) {
+            Text("Уже есть аккаунт? Войти")
         }
     }
 }
